@@ -4,7 +4,7 @@
  * per-person clap characteristics, and LOD for large crowds.
  */
 
-import { LOOKAHEAD_MS, SCHEDULE_INTERVAL_MS, LOD_CLAPPER_THRESHOLD, LOD_SAMPLE_COUNT, CC0_SAMPLE_BASE64 } from './constants.js';
+import { LOOKAHEAD_MS, SCHEDULE_INTERVAL_MS, LOD_CLAPPER_THRESHOLD, LOD_SAMPLE_COUNT, CC0_SAMPLE_BASE64, FOOTSTOMP_BASE64 } from './constants.js';
 import { sampleOffset } from './distributions.js';
 import { synthesizeClapVariants } from './synthesizer.js';
 
@@ -18,6 +18,8 @@ export class AudioEngine {
     this.clapVariants = null;
     // Decoded CC0 sample buffer
     this.sampleBuffer = null;
+    // Decoded foot stomp sample buffer
+    this.footstompBuffer = null;
     // User-uploaded custom buffer
     this.customBuffer = null;
 
@@ -60,6 +62,20 @@ export class AudioEngine {
         console.warn('Failed to decode embedded CC0 sample:', e);
       }
     }
+
+    // Decode embedded foot stomp sample if available
+    if (FOOTSTOMP_BASE64) {
+      try {
+        const binary = atob(FOOTSTOMP_BASE64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        this.footstompBuffer = await this.audioCtx.decodeAudioData(bytes.buffer);
+      } catch (e) {
+        console.warn('Failed to decode embedded foot stomp sample:', e);
+      }
+    }
   }
 
   /**
@@ -88,14 +104,30 @@ export class AudioEngine {
 
   /**
    * Get the appropriate AudioBuffer for a given person.
+   * @param {object} person - Person characteristics
+   * @param {number} [beatNumber] - Beat counter for pattern modes
    */
-  getBuffer(person) {
+  getBuffer(person, beatNumber) {
     const source = this.state.soundSource;
+
+    // Queen mode: foot-foot-clap-rest pattern
+    if (source === 'queen') {
+      const pos = beatNumber % 4;
+      if (pos === 3) return null; // rest
+      if (pos <= 1) return this.footstompBuffer; // foot stomp
+      // pos === 2: clap — use synthesized variant
+      if (this.clapVariants) return this.clapVariants[person.variantIndex];
+      return null;
+    }
+
     if (source === 'custom' && this.customBuffer) {
       return this.customBuffer;
     }
     if (source === 'sample' && this.sampleBuffer) {
       return this.sampleBuffer;
+    }
+    if (source === 'footstomp' && this.footstompBuffer) {
+      return this.footstompBuffer;
     }
     // Default: synthesized
     if (this.clapVariants) {
@@ -149,7 +181,7 @@ export class AudioEngine {
     const beatInterval = 60 / this.state.bpm;
 
     while (this.nextBeatTime < this.audioCtx.currentTime + lookaheadSec) {
-      this.scheduleBeat(this.nextBeatTime);
+      this.scheduleBeat(this.nextBeatTime, this.currentBeat);
       this.nextBeatTime += beatInterval;
       this.currentBeat++;
     }
@@ -158,8 +190,9 @@ export class AudioEngine {
   /**
    * Schedule all claps for a single beat.
    * @param {number} beatTime - The exact time of the beat in audio context time
+   * @param {number} beatNumber - Sequential beat counter (used for pattern modes)
    */
-  scheduleBeat(beatTime) {
+  scheduleBeat(beatTime, beatNumber) {
     const { clapperCount, spread, distribution, betaAlpha, betaBeta } = this.state;
 
     let personsToSchedule;
@@ -182,7 +215,7 @@ export class AudioEngine {
       // Skip if clap time is in the past
       if (clapTime < this.audioCtx.currentTime - 0.1) continue;
 
-      const buffer = this.getBuffer(person);
+      const buffer = this.getBuffer(person, beatNumber);
       if (!buffer) continue;
 
       // Create source node
