@@ -42,11 +42,23 @@ header {
   margin-bottom: 0.5rem;
 }
 
+.title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
 h1 {
   font-size: 1.4rem;
   font-weight: 700;
   letter-spacing: 0.15em;
   color: var(--text);
+}
+
+.tagline {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--text-dim);
 }
 
 .play-btn {
