@@ -34,7 +34,8 @@ export async function synthesizeClapVariants() {
  */
 async function renderClapBuffer(centerFreq, decayTime) {
   const length = Math.ceil(DURATION * SAMPLE_RATE);
-  const offline = new OfflineAudioContext(1, length, SAMPLE_RATE);
+  const OfflineCtx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  const offline = new OfflineCtx(1, length, SAMPLE_RATE);
 
   // Create white noise buffer
   const noiseBuffer = offline.createBuffer(1, length, SAMPLE_RATE);
@@ -73,5 +74,9 @@ async function renderClapBuffer(centerFreq, decayTime) {
 
   source.start(0);
 
-  return offline.startRendering();
+  // Use oncomplete callback (Safari doesn't support promise-based startRendering)
+  return new Promise((resolve) => {
+    offline.oncomplete = (e) => resolve(e.renderedBuffer);
+    offline.startRendering();
+  });
 }

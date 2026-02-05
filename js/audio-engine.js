@@ -39,12 +39,30 @@ export class AudioEngine {
   }
 
   /**
-   * Initialize the AudioContext and pre-render clap sounds.
+   * Create the AudioContext synchronously (must be called from a user gesture).
    */
-  async init() {
-    this.audioCtx = new AudioContext();
+  createContext() {
+    if (this.audioCtx) return;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    this.audioCtx = new Ctx();
     this.masterGain = this.audioCtx.createGain();
     this.masterGain.connect(this.audioCtx.destination);
+  }
+
+  /**
+   * Decode audio data using callback API (Safari compatibility).
+   */
+  decodeAudio(arrayBuffer) {
+    return new Promise((resolve, reject) => {
+      this.audioCtx.decodeAudioData(arrayBuffer, resolve, reject);
+    });
+  }
+
+  /**
+   * Load and decode all sound assets (context must already exist).
+   */
+  async init() {
+    if (!this.audioCtx) this.createContext();
 
     // Pre-render synthesized clap variants
     this.clapVariants = await synthesizeClapVariants();
@@ -57,7 +75,7 @@ export class AudioEngine {
         for (let i = 0; i < binary.length; i++) {
           bytes[i] = binary.charCodeAt(i);
         }
-        this.sampleBuffer = await this.audioCtx.decodeAudioData(bytes.buffer);
+        this.sampleBuffer = await this.decodeAudio(bytes.buffer.slice(0));
       } catch (e) {
         console.warn('Failed to decode embedded CC0 sample:', e);
       }
@@ -71,7 +89,7 @@ export class AudioEngine {
         for (let i = 0; i < binary.length; i++) {
           bytes[i] = binary.charCodeAt(i);
         }
-        this.footstompBuffer = await this.audioCtx.decodeAudioData(bytes.buffer);
+        this.footstompBuffer = await this.decodeAudio(bytes.buffer.slice(0));
       } catch (e) {
         console.warn('Failed to decode embedded foot stomp sample:', e);
       }
@@ -83,7 +101,7 @@ export class AudioEngine {
    * @param {ArrayBuffer} arrayBuffer - The uploaded file data
    */
   async loadCustomSample(arrayBuffer) {
-    this.customBuffer = await this.audioCtx.decodeAudioData(arrayBuffer);
+    this.customBuffer = await this.decodeAudio(arrayBuffer);
   }
 
   /**

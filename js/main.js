@@ -50,24 +50,35 @@ const canvas = document.getElementById('viz-canvas');
  */
 async function initOnce() {
   if (initialized) return;
-  initialized = true;
 
-  engine = new AudioEngine();
-  await engine.init();
-  engine.state = state;
-  engine.regeneratePersons(state.clapperCount);
-  engine.setVolume(state.volume);
+  try {
+    if (!engine) engine = new AudioEngine();
+    await engine.init();
+    engine.state = state;
+    engine.regeneratePersons(state.clapperCount);
+    engine.setVolume(state.volume);
 
-  viz = new Visualization(canvas, engine, state);
+    viz = new Visualization(canvas, engine, state);
 
-  // Handle window resize
-  window.addEventListener('resize', () => {
-    if (viz) viz.resize();
-  });
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      if (viz) viz.resize();
+    });
+
+    initialized = true;
+  } catch (e) {
+    console.error('Audio init failed, will retry on next play:', e);
+  }
 }
 
 // Play/Stop toggle
 playBtn.addEventListener('click', async () => {
+  // Create AudioContext and resume synchronously in the user gesture
+  // (iOS Safari requires this before any await)
+  if (!engine) engine = new AudioEngine();
+  engine.createContext();
+  engine.audioCtx.resume();
+
   await initOnce();
 
   if (state.playing) {
