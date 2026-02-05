@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clapmaker</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>CLAPMAKER</h1>
+      <button id="play-btn" class="play-btn" aria-label="Play/Stop">&#9654; Play</button>
+    </header>
+
+    <div class="controls">
+      <fieldset class="control-group">
+        <legend>Timing</legend>
+        <label>
+          <span class="label-text">BPM</span>
+          <input type="range" id="bpm" min="40" max="240" value="120" step="1">
+          <span class="value" id="bpm-val">120</span>
+        </label>
+        <label>
+          <span class="label-text">Clappers</span>
+          <input type="range" id="clappers" min="1" max="500" value="20" step="1">
+          <span class="value" id="clappers-val">20</span>
+        </label>
+        <label>
+          <span class="label-text">Spread</span>
+          <input type="range" id="spread" min="0" max="200" value="30" step="1">
+          <span class="value" id="spread-val">30ms</span>
+        </label>
+      </fieldset>
+
+      <fieldset class="control-group">
+        <legend>Distribution</legend>
+        <label>
+          <span class="label-text">Type</span>
+          <select id="distribution">
+            <option value="normal" selected>Normal</option>
+            <option value="uniform">Uniform</option>
+            <option value="exponential">Exponential</option>
+            <option value="laplace">Laplace</option>
+            <option value="beta">Beta</option>
+          </select>
+        </label>
+        <label id="alpha-control" class="beta-only hidden">
+          <span class="label-text">Alpha</span>
+          <input type="range" id="beta-alpha" min="0.1" max="10" value="2" step="0.1">
+          <span class="value" id="alpha-val">2.0</span>
+        </label>
+        <label id="beta-control" class="beta-only hidden">
+          <span class="label-text">Beta</span>
+          <input type="range" id="beta-beta" min="0.1" max="10" value="2" step="0.1">
+          <span class="value" id="beta-val">2.0</span>
+        </label>
+      </fieldset>
+
+      <fieldset class="control-group">
+        <legend>Sound</legend>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="source" value="synthesized" checked>
+            <span>Synthesized</span>
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="source" value="sample">
+            <span>Sample</span>
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="source" value="custom">
+            <span>Custom</span>
+            <input type="file" id="custom-file" accept="audio/*" class="file-input">
+            <button id="upload-btn" class="upload-btn">Upload...</button>
+          </label>
+        </div>
+        <label>
+          <span class="label-text">Volume</span>
+          <input type="range" id="volume" min="0" max="1" value="0.7" step="0.01">
+        </label>
+      </fieldset>
+    </div>
+
+    <fieldset class="control-group viz-group">
+      <legend>Visualization</legend>
+      <div class="canvas-container">
+        <canvas id="viz-canvas"></canvas>
+      </div>
+    </fieldset>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
