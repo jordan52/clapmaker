@@ -2,6 +2,8 @@
 
 *Finally, a way to hear what a Gaussian sounds like.*
 
+**[Try it now](https://jordan52.github.io/clapmaker/)**
+
 A web app that simulates the sound of many people clapping in rhythm.
 
 ## Features
