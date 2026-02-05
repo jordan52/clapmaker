@@ -1,5 +1,7 @@
 # Clapmaker
 
+*Finally, a way to hear what a Gaussian sounds like.*
+
 A web app that simulates the sound of many people clapping in rhythm.
 
 ## Features
